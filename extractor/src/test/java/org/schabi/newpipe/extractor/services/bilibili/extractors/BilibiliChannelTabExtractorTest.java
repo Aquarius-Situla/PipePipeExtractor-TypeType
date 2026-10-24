@@ -40,6 +40,7 @@ class BilibiliChannelTabExtractorTest {
             + "}]"
             + "}"
             + "}}";
+    private static String downloaderResponse = MOCK_SEASONS_SERIES_JSON;
 
     @BeforeAll
     static void setUp() {
@@ -58,7 +59,7 @@ class BilibiliChannelTabExtractorTest {
                             new byte[0], request.url());
                 }
                 return new Response(200, "OK", Collections.emptyMap(),
-                        MOCK_SEASONS_SERIES_JSON, new byte[0], request.url());
+                        downloaderResponse, new byte[0], request.url());
             }
 
             @Override
@@ -100,5 +101,37 @@ class BilibiliChannelTabExtractorTest {
 
         // total == 2, page_size == 20 -> no next page
         assertNull(initialPage.getNextPage());
+    }
+
+    @Test
+    void testApiErrorIsNotReportedAsEmptyPlaylistList() throws Exception {
+        downloaderResponse = "{\"code\":-352,\"message\":\"risk control\",\"data\":null}";
+        try {
+            final BilibiliChannelTabExtractor extractor = createPlaylistExtractor();
+            assertThrows(org.schabi.newpipe.extractor.exceptions.ParsingException.class,
+                    extractor::getInitialPage);
+        } finally {
+            downloaderResponse = MOCK_SEASONS_SERIES_JSON;
+        }
+    }
+
+    @Test
+    void testSuccessfulEmptyListsReturnEmptyPage() throws Exception {
+        downloaderResponse = "{\"code\":0,\"data\":{\"items_lists\":{"
+                + "\"seasons_list\":[],\"series_list\":[],"
+                + "\"page\":{\"page_num\":1,\"page_size\":20,\"total\":0}}}}";
+        try {
+            final ListExtractor.InfoItemsPage<InfoItem> page = createPlaylistExtractor().getInitialPage();
+            assertTrue(page.getItems().isEmpty());
+            assertNull(page.getNextPage());
+        } finally {
+            downloaderResponse = MOCK_SEASONS_SERIES_JSON;
+        }
+    }
+
+    private BilibiliChannelTabExtractor createPlaylistExtractor() throws Exception {
+        final ListLinkHandler handler = BilibiliChannelTabLinkHandlerFactory.getInstance().fromQuery("23630128",
+                Collections.singletonList(new FilterItem(0, ChannelTabs.PLAYLISTS)), null);
+        return new BilibiliChannelTabExtractor(ServiceList.BiliBili, handler);
     }
 }

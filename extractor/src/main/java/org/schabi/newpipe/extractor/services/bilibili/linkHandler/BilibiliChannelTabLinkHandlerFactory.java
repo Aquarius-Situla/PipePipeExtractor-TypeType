@@ -71,6 +71,7 @@ public final class BilibiliChannelTabLinkHandlerFactory extends ListLinkHandlerF
         if (url.contains("/channel/series")
                 || url.contains("/channel/collection")
                 || url.contains("/playlists")
+                || url.contains("/x/polymer/web-space/seasons_series_list")
                 || url.contains("tab=playlists")) {
             return ChannelTabs.PLAYLISTS;
         }

@@ -50,6 +50,17 @@ class BilibiliChannelTabLinkHandlerFactoryTest {
     }
 
     @Test
+    void testFromApiUrlKeepsPlaylistsTab() throws ParsingException {
+        final ListLinkHandler handler = factory.fromUrl(
+                "https://api.bilibili.com/x/polymer/web-space/seasons_series_list?mid=23630128&page_num=2&page_size=20");
+
+        assertEquals("23630128", handler.getId());
+        assertEquals(ChannelTabs.PLAYLISTS, handler.getContentFilters().get(0).getName());
+        assertEquals("https://api.bilibili.com/x/polymer/web-space/seasons_series_list?mid=23630128&page_num=1&page_size=20",
+                handler.getUrl());
+    }
+
+    @Test
     void testFromUrlVideosTab() throws ParsingException {
         ListLinkHandler defaultHandler = factory.fromUrl("https://space.bilibili.com/23630128");
         assertEquals("23630128", defaultHandler.getId());

@@ -70,17 +70,24 @@ public class BilibiliChannelTabExtractor extends ChannelTabExtractor {
         final String response = getDownloader().get(page.getUrl(), getHeaders(referer)).responseBody();
         try {
             final JsonObject root = JsonParser.object().from(response);
-            if (root.getInt("code", 0) != 0 || !root.has("data") || root.getObject("data") == null) {
-                return InfoItemsPage.emptyPage();
+            final int responseCode = root.getInt("code", 0);
+            if (responseCode != 0) {
+                throw new ParsingException("Bilibili returned an error response with code " + responseCode);
+            }
+            if (!root.has("data") || root.getObject("data") == null) {
+                throw new ParsingException("Bilibili seasons/series response is missing data");
             }
             final JsonObject data = root.getObject("data");
             if (!data.has("items_lists") || data.getObject("items_lists") == null) {
-                return InfoItemsPage.emptyPage();
+                throw new ParsingException("Bilibili seasons/series response is missing items_lists");
             }
 
             final JsonObject itemsLists = data.getObject("items_lists");
             final JsonArray seasonsList = itemsLists.getArray("seasons_list");
             final JsonArray seriesList = itemsLists.getArray("series_list");
+            if (seasonsList == null && seriesList == null) {
+                throw new ParsingException("Bilibili seasons/series response is missing both playlist lists");
+            }
 
             final int seasonsSize = seasonsList != null ? seasonsList.size() : 0;
             final int seriesSize = seriesList != null ? seriesList.size() : 0;
